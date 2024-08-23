@@ -1,0 +1,28 @@
+{
+	"lock": false,
+	"tasks": {},
+	"imports": {
+		"@std/assert": "jsr:@std/assert@^1.0.2",
+		"@std/fmt": "jsr:@std/fmt@^1.0.0",
+		"@std/fs": "jsr:@std/fs@^1.0.1"
+	},
+	"fmt": {
+		"semiColons": false,
+		"useTabs": true,
+		"lineWidth": 120,
+		"indentWidth": 4,
+		"singleQuote": true,
+		"proseWrap": "preserve",
+		"exclude": []
+	},
+	"compilerOptions": { "strict": true },
+	"lint": {
+		"exclude": [],
+		"rules": {
+			"tags": ["recommended"],
+			"exclude": [],
+			"include": []
+		}
+	},
+	"exclude": []
+}
