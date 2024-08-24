@@ -3,4 +3,5 @@ export type InspectOptions = {
 	depth: number
 	indentationLvl: number
 	colors: boolean
+	iterableLimit: number
 }

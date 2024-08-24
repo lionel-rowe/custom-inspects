@@ -1,6 +1,6 @@
 # Custom Inspects
 
-Some experiments with custom inspects for Deno console logging.
+Some experiments with custom inspects for Deno/NodeJS console logging.
 
 ## Usage
 
