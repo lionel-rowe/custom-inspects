@@ -29,17 +29,15 @@ type DebugBinaryOptions = {
 }
 
 /** Based on hex editor display */
-function debugBinary(bin: BufferSource, options?: Partial<DebugBinaryOptions>) {
+function debugBinary(bytes: Uint8Array, options?: Partial<DebugBinaryOptions>) {
 	const lineLength = 16
 	const maxLines = options?.maxLines ?? 8
 	const caption = options?.caption ?? '##'
 	const captionPadLength = Math.max(caption.length, 2)
 
-	const u8 = new Uint8Array(ArrayBuffer.isView(bin) ? bin.buffer : bin)
-	const o = Object.groupBy(
-		[...u8],
-		(_, i) => Math.floor(i / lineLength),
-	)
+	const bytesTruncated = bytes.slice(0, Math.min(bytes.length, maxLines * lineLength))
+	const o = Object.groupBy([...bytesTruncated], (_, i) => Math.floor(i / lineLength))
+
 	const lines: number[][] = Array.from({ length: Math.min(Object.keys(o).length, maxLines), ...o })
 
 	const header = `${colors.dim(caption.padEnd(captionPadLength, ' '))} ${
@@ -64,5 +62,5 @@ function debugBinary(bin: BufferSource, options?: Partial<DebugBinaryOptions>) {
 		}),
 	].join('\n')
 
-	return u8.length > maxLines * lineLength ? `${out}\n... ${u8.length - maxLines * lineLength} more bytes` : out
+	return bytes.length > maxLines * lineLength ? `${out}\n... ${bytes.length - maxLines * lineLength} more bytes` : out
 }

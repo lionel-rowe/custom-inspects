@@ -6,6 +6,7 @@ Some experiments with custom inspects for Deno console logging.
 
 ```ts
 import { inspectBytes } from './bytes.ts'
+import { monkeyPatchCustomInspect } from './utils.ts'
 
 monkeyPatchCustomInspect(Uint8Array, inspectBytes)
 
