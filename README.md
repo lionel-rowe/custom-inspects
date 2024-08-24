@@ -2,15 +2,15 @@
 
 Some experiments with custom inspects for Deno/NodeJS console logging.
 
-![Screenshot](./img/screenshot.png)
+<!-- custom thumbnail - see https://github.com/asciinema/asciinema/issues/646 -->
+[![asciicast](./img/asciicinema-thumb-spaced.svg)](https://asciinema.org/a/XxTbS0aAtTA6BZ9tdzKardxJs)
 
 ## Usage
 
 ### Deno
 
 ```ts
-import { inspectBytes } from '@li/custom-inspects/bytes'
-import { patch } from '@li/custom-inspects/utils'
+import { patch, inspectBytes } from '@li/custom-inspects'
 
 patch(Uint8Array.prototype, inspectBytes)
 
@@ -34,8 +34,7 @@ console.info(await Deno.readFile('./img/Example.jpg'))
 
 ```ts
 import * as fs from 'node:fs/promises'
-import { inspectBytes } from '@li/custom-inspects/bytes'
-import { patch } from '@li/custom-inspects/utils'
+import { patch, inspectBytes } from '@li/custom-inspects'
 
 patch(Uint8Array.prototype, inspectBytes)
 patch(Buffer.prototype, inspectBytes)
