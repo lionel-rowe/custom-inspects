@@ -1,5 +1,13 @@
 {
 	"lock": false,
+	"name": "@li/custom-inspects",
+	"version": "0.0.0",
+	"exports": {
+		".": "./mod.ts",
+		"./bytes.ts": "./bytes.ts",
+		"./minimal.ts": "./minimal.ts",
+		"./utils.ts": "./utils.ts"
+	},
 	"tasks": {},
 	"imports": {
 		"@std/assert": "jsr:@std/assert@^1.0.2",

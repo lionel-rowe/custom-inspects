@@ -10,6 +10,34 @@ Deno.test(inspectMinimal.name, () => {
 	assertEquals(Deno.inspect(new Intl.Locale('en-US'), { colors: true }), '\x1b[36mIntl.Locale <en-US>\x1b[39m')
 })
 
+Deno.test(String(Symbol.dispose.description), () => {
+	{
+		const fn = () => ':)'
+		using _ = patch(Array.prototype, fn)
+
+		{
+			using _ = patch(Array.prototype, inspectMinimal)
+			assertEquals(Deno.inspect([0, 1]), 'Array <0,1>')
+			// @ts-expect-error custom inspect
+			assertEquals(Array.prototype[Symbol.for('Deno.customInspect')], inspectMinimal)
+			// @ts-expect-error custom inspect
+			assertEquals(Array.prototype[Symbol.for('nodejs.util.inspect.custom')], inspectMinimal)
+		}
+
+		assertEquals(Deno.inspect([0, 1]), ':)')
+		// @ts-expect-error custom inspect
+		assertEquals(Array.prototype[Symbol.for('Deno.customInspect')], fn)
+		// @ts-expect-error custom inspect
+		assertEquals(Array.prototype[Symbol.for('nodejs.util.inspect.custom')], fn)
+	}
+
+	assertEquals(Deno.inspect([0, 1]), '[ 0, 1 ]')
+	// @ts-expect-error custom inspect
+	assertEquals(Array.prototype[Symbol.for('Deno.customInspect')], undefined)
+	// @ts-expect-error custom inspect
+	assertEquals(Array.prototype[Symbol.for('nodejs.util.inspect.custom')], undefined)
+})
+
 Deno.test(inspectBytes.name, async (t) => {
 	using _ = patch(Uint8Array.prototype, inspectBytes)
 

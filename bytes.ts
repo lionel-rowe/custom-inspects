@@ -3,28 +3,30 @@ import { createCustomInspect } from './utils.ts'
 
 const LINE_LENGTH = 16
 
-export const inspectBytes = createCustomInspect(function inspectBytes(this: Uint8Array, options) {
-	if (options.currentDepth > options.depth) {
-		return `${colors.cyan(`[${this[Symbol.toStringTag]}]`)}`
-	}
+export const inspectBytes: (this: Uint8Array, ...args: unknown[]) => string = createCustomInspect(
+	function inspectBytes(this: Uint8Array, options) {
+		if (options.currentDepth > options.depth) {
+			return `${colors.cyan(`[${this[Symbol.toStringTag]}]`)}`
+		}
 
-	const lines = debugBinary(this, {
-		maxLines: Math.ceil(options.iterableLimit / LINE_LENGTH),
-	}).split('\n')
+		const lines = debugBinary(this, {
+			maxLines: Math.ceil(options.iterableLimit / LINE_LENGTH),
+		}).split('\n')
 
-	const out = `${this[Symbol.toStringTag]}(${this.length}) [${
-		this.length
-			? `\n${
-				lines
-					.map((x) => ' '.repeat(2) + x).join('\n')
-			}\n`
-			: ''
-	}]`
+		const out = `${this[Symbol.toStringTag]}(${this.length}) [${
+			this.length
+				? `\n${
+					lines
+						.map((x) => ' '.repeat(2) + x).join('\n')
+				}\n`
+				: ''
+		}]`
 
-	const outLines = out.split('\n')
+		const outLines = out.split('\n')
 
-	return [outLines[0], ...outLines.slice(1).map((x) => ' '.repeat(options.indentationLvl) + x)].join('\n')
-})
+		return [outLines[0], ...outLines.slice(1).map((x) => ' '.repeat(options.indentationLvl) + x)].join('\n')
+	},
+)
 
 type DebugBinaryOptions = {
 	maxLines: number

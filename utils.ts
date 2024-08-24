@@ -42,7 +42,9 @@ function getOptions(args: unknown[]): InspectOptions {
 	return inspectOptions
 }
 
-export function createCustomInspect<T>(fn: (this: T, options: InspectOptions) => string) {
+export function createCustomInspect<T>(
+	fn: (this: T, options: InspectOptions) => string,
+): (this: T, ...args: unknown[]) => string {
 	const inspect = function (this: T, ...args: unknown[]) {
 		const options = getOptions(args)
 		using _ = handleColor(options)
@@ -65,23 +67,28 @@ export type CustomInspect<T> = ReturnType<typeof createCustomInspect<T>>
 export function patch<T>(
 	obj: T,
 	customInspect: CustomInspect<T>,
-) {
-	for (
-		const sym of [
-			Symbol.for('Deno.customInspect'),
-			Symbol.for('nodejs.util.inspect.custom'),
-		]
-	) {
+): {
+	[Symbol.dispose](): void
+} {
+	const syms = [
+		Symbol.for('Deno.customInspect'),
+		Symbol.for('nodejs.util.inspect.custom'),
+	]
+	const oldVals: unknown[] = []
+
+	for (const sym of syms) {
 		// @ts-expect-error custom inspect
-		const oldVal = obj[sym]
+		oldVals.push(obj[sym])
 		// @ts-expect-error custom inspect
 		obj[sym] = customInspect
+	}
 
-		return {
-			[Symbol.dispose]() {
+	return {
+		[Symbol.dispose]() {
+			for (const [idx, sym] of syms.entries()) {
 				// @ts-expect-error custom inspect
-				obj[sym] = oldVal
-			},
-		}
+				obj[sym] = oldVals[idx]
+			}
+		},
 	}
 }
