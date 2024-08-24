@@ -5,10 +5,10 @@ Some experiments with custom inspects for Deno/NodeJS console logging.
 ## Usage
 
 ```ts
-import { inspectBytes } from './bytes.ts'
-import { monkeyPatchCustomInspect } from './utils.ts'
+import { inspectBytes } from '@li/custom-inspects/bytes'
+import { patch } from '@li/custom-inspects/utils'
 
-monkeyPatchCustomInspect(Uint8Array, inspectBytes)
+patch(Uint8Array, inspectBytes)
 
 console.info(await Deno.readFile('./img/Example.jpg'))
 

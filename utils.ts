@@ -13,8 +13,6 @@ function handleColor(options: InspectOptions) {
 	}
 }
 
-Deno.inspect
-
 const defaultOptions: InspectOptions = {
 	currentDepth: 0,
 	depth: 4,
