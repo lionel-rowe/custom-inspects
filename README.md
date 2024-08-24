@@ -2,13 +2,17 @@
 
 Some experiments with custom inspects for Deno/NodeJS console logging.
 
+![Screenshot](./img/screenshot.png)
+
 ## Usage
+
+### Deno
 
 ```ts
 import { inspectBytes } from '@li/custom-inspects/bytes'
 import { patch } from '@li/custom-inspects/utils'
 
-patch(Uint8Array, inspectBytes)
+patch(Uint8Array.prototype, inspectBytes)
 
 console.info(await Deno.readFile('./img/Example.jpg'))
 
@@ -26,6 +30,19 @@ console.info(await Deno.readFile('./img/Example.jpg'))
 // ]
 ```
 
-Printed to the console with color enabled:
+### NodeJS
 
-![Screenshot](./img/screenshot.png)
+```ts
+import * as fs from 'node:fs/promises'
+import { inspectBytes } from '@li/custom-inspects/bytes'
+import { patch } from '@li/custom-inspects/utils'
+
+patch(Uint8Array.prototype, inspectBytes)
+patch(Buffer.prototype, inspectBytes)
+
+console.info(await fs.readFile('./img/Example.jpg'))
+
+// Buffer(25303) [
+//   ...
+// ]
+```

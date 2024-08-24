@@ -6,14 +6,14 @@ const LINE_LENGTH = 16
 export const inspectBytes: (this: Uint8Array, ...args: unknown[]) => string = createCustomInspect(
 	function inspectBytes(this: Uint8Array, options) {
 		if (options.currentDepth > options.depth) {
-			return `${colors.cyan(`[${this[Symbol.toStringTag]}]`)}`
+			return `${colors.cyan(`[${this.constructor.name}]`)}`
 		}
 
 		const lines = debugBinary(this, {
 			maxLines: Math.ceil(options.iterableLimit / LINE_LENGTH),
 		}).split('\n')
 
-		const out = `${this[Symbol.toStringTag]}(${this.length}) [${
+		const out = `${this.constructor.name}(${this.length}) [${
 			this.length
 				? `\n${
 					lines
