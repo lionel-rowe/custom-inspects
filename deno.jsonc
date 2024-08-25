@@ -1,12 +1,13 @@
 {
 	"lock": false,
 	"name": "@li/custom-inspects",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"exports": {
 		".": "./mod.ts",
 		"./bytes": "./bytes.ts",
 		"./minimal": "./minimal.ts",
-		"./utils": "./utils.ts"
+		"./utils": "./utils.ts",
+		"./types": "./types.ts"
 	},
 	"tasks": {},
 	"imports": {

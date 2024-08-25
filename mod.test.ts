@@ -41,6 +41,22 @@ Deno.test(String(Symbol.dispose.description), () => {
 Deno.test(inspectBytes.name, async (t) => {
 	using _ = patch(Uint8Array.prototype, inspectBytes)
 
+	await t.step('hello world', () => {
+		const bytes = new TextEncoder().encode(
+			'Hello, 🌍!',
+		)
+
+		assertEquals(
+			Deno.inspect(bytes, { colors: false }),
+			`
+Uint8Array(12) [
+  ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
+  0x 48 65 6c 6c 6f 2c 20 f0 9f 8c 8d 21             Hello, ....!
+]
+`.trim(),
+		)
+	})
+
 	await t.step('lorem ipsum', () => {
 		const bytes = new TextEncoder().encode(
 			'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',

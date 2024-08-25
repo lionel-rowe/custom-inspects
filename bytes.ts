@@ -1,8 +1,30 @@
 import * as colors from '@std/fmt/colors'
 import { createCustomInspect } from './utils.ts'
 
+/**
+ * @module
+ * Custom inspects for Deno/NodeJS console logging of `Uint8Array` and NodeJs `Buffer` objects.
+ */
+
 const LINE_LENGTH = 16
 
+/**
+ * Custom inspect function for `Uint8Array` and NodeJs `Buffer` objects.
+ *
+ * @example
+ * ```ts
+ * import { patch } from '@li/custom-inspects/utils'
+ * import { inspectBytes } from '@li/custom-inspects/bytes'
+ *
+ * patch(Uint8Array.prototype, inspectBytes)
+ *
+ * Deno.inspect(new TextEncoder().encode('Hello, 🌍!'))
+ * // Uint8Array(12) [
+ * //   ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
+ * //   0x 48 65 6c 6c 6f 2c 20 f0 9f 8c 8d 21             Hello, ....!
+ * // ]
+ * ```
+ */
 export const inspectBytes: (this: Uint8Array, ...args: unknown[]) => string = createCustomInspect(
 	function inspectBytes(this: Uint8Array, options) {
 		if (options.currentDepth > options.depth) {

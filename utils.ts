@@ -1,6 +1,10 @@
 import * as colors from '@std/fmt/colors'
 import type { InspectOptions } from './types.ts'
-import { inspectMinimal } from './minimal.ts'
+
+/**
+ * @module
+ * Utils for custom inspects for Deno/NodeJS console logging.
+ */
 
 function handleColor(options: InspectOptions) {
 	const originalValue = colors.getColorEnabled()
@@ -26,7 +30,7 @@ function getOption<K extends keyof InspectOptions>(o: Record<string, unknown>, k
 	return typeof o[key] === typeof defaultOptions[key] ? o[key] : defaultOptions[key]
 }
 
-function getOptions(args: unknown[]): InspectOptions {
+function getAndNormalizeOptions(args: unknown[]): InspectOptions {
 	const o = (args.find((x) => typeof x === 'object') ?? {}) as Record<string, unknown>
 
 	const inspectOptions: InspectOptions = {
@@ -40,11 +44,15 @@ function getOptions(args: unknown[]): InspectOptions {
 	return inspectOptions
 }
 
-export function createCustomInspect<T>(
-	fn: (this: T, options: InspectOptions) => string,
-): (this: T, ...args: unknown[]) => string {
+/**
+ * Creates a custom inspect function, adding error handling, handling of colors, and normalization of options.
+ *
+ * @param fn The function to create the custom inspect function from.
+ * @returns The modified custom inspect function, which can be used with both Symbol.for('Deno.customInspect') and Symbol.for('nodejs.util.inspect.custom').
+ */
+export function createCustomInspect<T>(fn: (this: T, options: InspectOptions) => string): CustomInspect<T> {
 	const inspect = function (this: T, ...args: unknown[]) {
-		const options = getOptions(args)
+		const options = getAndNormalizeOptions(args)
 		using _ = handleColor(options)
 
 		try {
@@ -60,8 +68,40 @@ export function createCustomInspect<T>(
 	return inspect
 }
 
-export type CustomInspect<T> = ReturnType<typeof createCustomInspect<T>>
+/**
+ * The custom inspect function type.
+ */
+export type CustomInspect<T> = (this: T, ...args: unknown[]) => string
 
+/**
+ * Monkey-patches the given object/prototype with the given custom inspect function.
+ *
+ * @param obj The object/prototype to patch
+ * @param customInspect The custom inspect function to use
+ * @returns A disposable object that can be used along with `using` to remove the patching once out of scope.
+ *
+ * @example Global patch
+ * ```ts
+ * import { patch } from '@li/custom-inspects'
+ *
+ * patch(Array.prototype, () => ':)')
+ * console.log([])
+ * // logs ":)"
+ * ```
+ *
+ * @example Temporary patch with `using`
+ * ```ts
+ * import { patch } from '@li/custom-inspects'
+ *
+ * {
+ * 	using _ = patch(Array.prototype, () => ':)')
+ * 	console.log([])
+ * 	// logs ":)"
+ * }
+ * console.log([])
+ * // logs "[]"
+ * ```
+ */
 export function patch<T>(
 	obj: T,
 	customInspect: CustomInspect<T>,
