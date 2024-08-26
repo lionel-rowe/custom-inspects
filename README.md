@@ -3,7 +3,7 @@
 Some experiments with custom inspects for Deno/NodeJS console logging.
 
 <!-- custom thumbnail - see https://github.com/asciinema/asciinema/issues/646 -->
-[![asciicast](https://raw.githubusercontent.com/lionel-rowe/custom-inspects/main/img/asciinema-thumb-font-size-adjusted.svg)](https://asciinema.org/a/XxTbS0aAtTA6BZ9tdzKardxJs)
+[![asciicast](https://raw.githubusercontent.com/lionel-rowe/custom-inspects/main/img/asciinema-673372-modified.svg)](https://asciinema.org/a/673372)
 
 ## Usage
 
