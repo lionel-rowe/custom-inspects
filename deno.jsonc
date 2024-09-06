@@ -1,7 +1,7 @@
 {
 	"lock": false,
 	"name": "@li/custom-inspects",
-	"version": "0.0.9",
+	"version": "0.0.10",
 	"exports": {
 		".": "./mod.ts",
 		"./bytes": "./bytes.ts",
