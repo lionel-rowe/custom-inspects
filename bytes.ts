@@ -1,5 +1,6 @@
 import * as colors from '@std/fmt/colors'
 import { createCustomInspect } from './utils.ts'
+import { format } from '@std/fmt/bytes'
 
 /**
  * @module
@@ -89,7 +90,5 @@ function debugBinary(bytes: Uint8Array, options?: Partial<DebugBinaryOptions>) {
 		}),
 	].join('\n')
 
-	return bytes.length > maxLines * LINE_LENGTH
-		? `${out}\n... ${bytes.length - maxLines * LINE_LENGTH} more bytes`
-		: out
+	return bytes.length > maxLines * LINE_LENGTH ? `${out}\n... ${format(bytes.length)} total` : out
 }

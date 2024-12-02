@@ -2,6 +2,7 @@ import { assertEquals } from '@std/assert'
 import { inspectMinimal } from './minimal.ts'
 import { inspectBytes } from './bytes.ts'
 import { patch } from './utils.ts'
+import { Buffer } from 'node:buffer'
 
 Deno.test(inspectMinimal.name, () => {
 	using _ = patch(Intl.Locale.prototype, inspectMinimal)
@@ -78,7 +79,7 @@ Uint8Array(10) [
 Uint8Array(445) [
   ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
   0x 4c 6f 72 65 6d 20 69 70 73 75 6d 20 64 6f 6c 6f Lorem ipsum dolo
-  ... 429 more bytes
+  ... 445 B total
 ]
 `.trim(),
 		)
@@ -95,7 +96,7 @@ Uint8Array(445) [
   4x 65 69 75 73 6d 6f 64 20 74 65 6d 70 6f 72 20 69 eiusmod tempor i
   5x 6e 63 69 64 69 64 75 6e 74 20 75 74 20 6c 61 62 ncididunt ut lab
   6x 6f 72 65 20 65 74 20 64 6f 6c 6f 72 65 20 6d 61 ore et dolore ma
-  ... 333 more bytes
+  ... 445 B total
 ]
 `.trim(),
 		)
@@ -112,7 +113,7 @@ Uint8Array(445) [
   \x1b[2m\x1b[22m\x1b[1m4\x1b[22m\x1b[2mx\x1b[22m \x1b[33m65 69 75 73 6d 6f 64 20 74 65 6d 70 6f 72 20 69\x1b[39m \x1b[32meiusmod tempor i\x1b[39m
   \x1b[2m\x1b[22m\x1b[1m5\x1b[22m\x1b[2mx\x1b[22m \x1b[33m6e 63 69 64 69 64 75 6e 74 20 75 74 20 6c 61 62\x1b[39m \x1b[32mncididunt ut lab\x1b[39m
   \x1b[2m\x1b[22m\x1b[1m6\x1b[22m\x1b[2mx\x1b[22m \x1b[33m6f 72 65 20 65 74 20 64 6f 6c 6f 72 65 20 6d 61\x1b[39m \x1b[32more et dolore ma\x1b[39m
-  ... 333 more bytes
+  ... 445 B total
 ]
 `.trim(),
 		)
@@ -135,7 +136,7 @@ Uint8Array(231) [
   4x 80 82 e5 8c 96 e8 80 8c e7 82 ba e9 b3 a5 ef bc ................
   5x 8c e5 85 b6 e5 90 8d e7 82 ba e9 b5 ac e3 80 82 ................
   6x e9 b5 ac e4 b9 8b e8 83 8c ef bc 8c e4 b8 8d e7 ................
-  ... 119 more bytes
+  ... 231 B total
 ]
 `.trim(),
 		)
@@ -156,7 +157,7 @@ Uint8Array(1000) [
   4x 40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f @ABCDEFGHIJKLMNO
   5x 50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f PQRSTUVWXYZ[\\]^_
   6x 60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f \`abcdefghijklmno
-  ... 888 more bytes
+  ... 1 kB total
 ]
 `.trim(),
 		)
@@ -177,7 +178,7 @@ Uint8Array(25303) [
   4x 04 05 06 05 04 06 06 05 06 07 07 06 08 0a 10 0a ................
   5x 0a 09 09 0a 14 0e 0f 0c 10 17 14 18 18 17 14 16 ................
   6x 16 1a 1d 25 1f 1a 1b 23 1c 16 16 20 2c 20 23 26 ...%...#... , #&
-  ... 25191 more bytes
+  ... 25.3 kB total
 ]
 `.trim(),
 		)
@@ -198,7 +199,21 @@ Uint8Array(2335) [
   4x ee e7 f0 f0 c7 db d2 48 9c 72 5f 6c 65 75 82 7b .......H.r_leu.{
   5x b7 c6 be 89 9f 92 a1 b2 a7 d9 e7 dc 34 49 2e cf ............4I..
   6x e9 c2 c7 e2 a6 ad b6 6d f2 f0 b9 ed e2 80 e9 d3 .......m........
-  ... 2223 more bytes
+  ... 2.33 kB total
+]
+`.trim(),
+		)
+	})
+
+	await t.step('NodeJS Buffer', () => {
+		const bytes = Buffer.from('abc')
+
+		assertEquals(
+			Deno.inspect(bytes, { colors: false }),
+			`
+Buffer(3) [
+  ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
+  0x 61 62 63                                        abc
 ]
 `.trim(),
 		)
