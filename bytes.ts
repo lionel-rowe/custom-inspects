@@ -60,8 +60,10 @@ type DebugBinaryOptions = {
 /** Based on hex editor display */
 function debugBinary(bytes: Uint8Array, options?: Partial<DebugBinaryOptions>) {
 	const maxLines = options?.maxLines ?? 8
-	const caption = options?.caption ?? '##'
-	const captionPadLength = Math.max(caption.length, 2)
+	const actualLines = Math.min(maxLines, Math.ceil(bytes.length / LINE_LENGTH))
+	const maxCaptionLength = Math.max(2, (actualLines - 1).toString(16).length + 1)
+	const caption = options?.caption ?? '#'.repeat(maxCaptionLength)
+	const captionPadLength = Math.max(caption.length, maxCaptionLength)
 
 	const bytesTruncated = bytes.slice(0, Math.min(bytes.length, maxLines * LINE_LENGTH))
 	const o = Object.groupBy([...bytesTruncated], (_, i) => Math.floor(i / LINE_LENGTH))
@@ -76,9 +78,9 @@ function debugBinary(bytes: Uint8Array, options?: Partial<DebugBinaryOptions>) {
 		header,
 		...lines.map((line, idx) => {
 			const num = (idx * LINE_LENGTH).toString(16).replace(/0$/, 'x')
-				.padStart(2, '0')
+				.padStart(maxCaptionLength, '0')
 
-			const offset = colors.dim('0'.repeat(captionPadLength - num.length)) +
+			const offset = colors.dim('0'.repeat(Math.max(0, captionPadLength - num.length))) +
 				colors.bold(num.slice(0, -1)) + colors.dim(num.slice(-1))
 			const hex = line.map((x) => x.toString(16).padStart(2, '0')).join(' ')
 			const ascii = line.map((x) => x >= 0x20 && x <= 0x7e ? String.fromCodePoint(x) : colors.dim('.')).join('')
