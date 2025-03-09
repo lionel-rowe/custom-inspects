@@ -279,4 +279,79 @@ Deno.test(inspectBytes.name, async (t) => {
 		assertStringIncludes(Deno.inspect(new Uint8Array(0x10000), { colors: false, iterableLimit }), ' #### ')
 		assertStringIncludes(Deno.inspect(new Uint8Array(0x10001), { colors: false, iterableLimit }), ' ##### ')
 	})
+
+	await t.step('dimmed coloring of zero bytes', () => {
+		const bytes = new Uint8Array(4).fill(0xff)
+		const getFormattedBytes = () => Deno.inspect(bytes, { colors: true }).split('\n')[2].split(/\s+/, 6).slice(2)
+
+		assertEquals(
+			getFormattedBytes(),
+			[
+				'\x1b[33mff',
+				'ff',
+				'ff',
+				'ff',
+			],
+		)
+
+		bytes[0] = 0
+
+		assertEquals(
+			getFormattedBytes(),
+			[
+				'\x1b[33m\x1b[2m00\x1b[22m',
+				'ff',
+				'ff',
+				'ff',
+			],
+		)
+
+		bytes[2] = 0
+
+		assertEquals(
+			getFormattedBytes(),
+			[
+				'\x1b[33m\x1b[2m00\x1b[22m',
+				'ff',
+				'\x1b[2m00\x1b[22m',
+				'ff',
+			],
+		)
+
+		bytes.fill(0)
+
+		assertEquals(
+			getFormattedBytes(),
+			[
+				'\x1b[33m\x1b[2m00\x1b[22m',
+				'\x1b[2m00\x1b[22m',
+				'\x1b[2m00\x1b[22m',
+				'\x1b[2m00\x1b[22m',
+			],
+		)
+	})
+
+	await t.step('dimmed coloring of non-ASCII code points', () => {
+		const bytes = new Uint8Array(4)
+		const getFormattedChars = () =>
+			Deno.inspect(bytes, { colors: true })
+				.split('\n')[2]
+				.split(/\s{3,}/)[1]
+				.split(' ')[1]
+
+		assertEquals(
+			getFormattedChars(),
+			'\x1b[32m\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[39m',
+		)
+
+		bytes[0] = 'A'.codePointAt(0)!
+		assertEquals(getFormattedChars(), '\x1b[32mA\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[39m')
+
+		bytes[1] = 'B'.codePointAt(0)!
+		assertEquals(getFormattedChars(), '\x1b[32mAB\x1b[2m.\x1b[22m\x1b[2m.\x1b[22m\x1b[39m')
+
+		bytes[2] = 'C'.codePointAt(0)!
+		bytes[3] = 'D'.codePointAt(0)!
+		assertEquals(getFormattedChars(), '\x1b[32mABCD\x1b[39m')
+	})
 })
