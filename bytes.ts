@@ -7,8 +7,6 @@ import { format } from '@std/fmt/bytes'
  * Custom inspects for Deno/NodeJS console logging of `Uint8Array` and NodeJs `Buffer` objects.
  */
 
-const LINE_LENGTH = 16
-
 /**
  * Custom inspect function for `Uint8Array` and NodeJs `Buffer` objects.
  *
@@ -32,65 +30,70 @@ export const inspectBytes: (this: Uint8Array, ...args: unknown[]) => string = cr
 			return `${colors.cyan(`[${this.constructor.name}]`)}`
 		}
 
-		const lines = debugBinary(this, {
-			maxLines: Math.ceil(options.iterableLimit / LINE_LENGTH),
-		}).split('\n')
+		const prefix = `${this.constructor.name}(${this.length}) [`
 
-		const out = `${this.constructor.name}(${this.length}) [${
-			this.length
-				? `\n${
-					lines
-						.map((x) => ' '.repeat(2) + x).join('\n')
-				}\n`
-				: ''
-		}]`
+		if (this.length === 0) return `${prefix}]`
 
-		const outLines = out.split('\n')
+		const innerIndent = ' '.repeat(options.indentationLvl + 2)
 
-		return [outLines[0], ...outLines.slice(1).map((x) => ' '.repeat(options.indentationLvl) + x)].join('\n')
+		return [
+			prefix,
+			...debugBinary(this, {
+				radix: 16,
+				maxLength: options.iterableLimit,
+			}).map((x) => innerIndent + x),
+			' '.repeat(options.indentationLvl) + ']',
+		].join('\n')
 	},
 )
 
 type DebugBinaryOptions = {
-	maxLines: number
-	color: boolean
-	caption: string
+	radix: number
+	maxLength: number
 }
 
 /** Based on hex editor display */
-function debugBinary(bytes: Uint8Array, options?: Partial<DebugBinaryOptions>) {
-	const maxLines = options?.maxLines ?? 8
-	const actualLines = Math.min(maxLines, Math.ceil(bytes.length / LINE_LENGTH))
-	const maxCaptionLength = Math.max(2, (actualLines - 1).toString(16).length + 1)
-	const caption = options?.caption ?? '#'.repeat(maxCaptionLength)
+function debugBinary(bytes: Uint8Array, options: DebugBinaryOptions) {
+	const { maxLength, radix } = options
+
+	// We treat max length as more of a hint, as there's nothing to be gained from truncating the output
+	// before the end of a complete line.
+	const maxLines = Math.ceil(maxLength / radix)
+
+	const actualLines = Math.min(maxLines, Math.ceil(bytes.length / radix))
+	const maxCaptionLength = Math.max(2, (actualLines - 1).toString(radix).length + 1)
+	const caption = '#'.repeat(maxCaptionLength)
 	const captionPadLength = Math.max(caption.length, maxCaptionLength)
 
-	const bytesTruncated = bytes.slice(0, Math.min(bytes.length, maxLines * LINE_LENGTH))
-	const o = Object.groupBy([...bytesTruncated], (_, i) => Math.floor(i / LINE_LENGTH))
-
-	const lines: number[][] = Array.from({ length: Math.min(Object.keys(o).length, maxLines), ...o })
-
 	const header = `${colors.dim(caption.padEnd(captionPadLength, ' '))} ${
-		Array.from({ length: LINE_LENGTH }, (_, i) => colors.dim('x') + colors.bold(i.toString(16))).join(' ')
+		Array.from({ length: radix }, (_, i) => colors.dim('x') + colors.bold(i.toString(radix))).join(' ')
 	}`
 
-	const out = [
-		header,
-		...lines.map((line, idx) => {
-			const num = (idx * LINE_LENGTH).toString(16).replace(/0$/, 'x')
-				.padStart(maxCaptionLength, '0')
+	const lines = [header]
 
-			const offset = colors.dim('0'.repeat(Math.max(0, captionPadLength - num.length))) +
-				colors.bold(num.slice(0, -1)) + colors.dim(num.slice(-1))
-			const hex = line.map((x) => x.toString(16).padStart(2, '0')).join(' ')
-			const ascii = line.map((x) => x >= 0x20 && x <= 0x7e ? String.fromCodePoint(x) : colors.dim('.')).join('')
+	const numBytesToDisplay = Math.min(bytes.length, maxLines * radix)
 
-			return `${offset} ${
-				colors.yellow(hex.padEnd(LINE_LENGTH * 3 - 1))
-					.replaceAll('00', colors.dim('00'))
-			} ${colors.green(ascii)}`
-		}),
-	].join('\n')
+	for (let startIdx = 0; startIdx < numBytesToDisplay; startIdx += radix) {
+		const line = [...bytes.subarray(startIdx, startIdx + radix)]
 
-	return bytes.length > maxLines * LINE_LENGTH ? `${out}\n... ${format(bytes.length)} total` : out
+		const lineIdx = Math.floor(startIdx / radix)
+		const offset = (lineIdx * radix).toString(radix).padStart(maxCaptionLength, '0')
+
+		const offsetMask = colors.dim('0'.repeat(Math.max(0, captionPadLength - offset.length))) +
+			colors.bold(offset.slice(0, -1)) + colors.dim('x')
+		const hexBytes = line.map((x) => x.toString(radix).padStart(2, '0')).join(' ')
+		const ascii = line.map((x) => x >= 0x20 && x <= 0x7e ? String.fromCodePoint(x) : colors.dim('.')).join('')
+
+		const formatted = `${offsetMask} ${
+			colors.yellow(hexBytes.padEnd(radix * 3 - 1)).replaceAll('00', colors.dim('00'))
+		} ${colors.green(ascii)}`
+
+		lines.push(formatted)
+	}
+
+	if (bytes.length > maxLines * radix) {
+		lines.push(`... ${format(bytes.length)} total`)
+	}
+
+	return lines
 }

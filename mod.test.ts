@@ -13,6 +13,12 @@ Deno.test(inspectMinimal.name, () => {
 })
 
 Deno.test(String(Symbol.dispose.description), () => {
+	assertEquals(Deno.inspect([0, 1]), '[ 0, 1 ]')
+	// @ts-expect-error custom inspect
+	assertEquals(Array.prototype[Symbol.for('Deno.customInspect')], undefined)
+	// @ts-expect-error custom inspect
+	assertEquals(Array.prototype[Symbol.for('nodejs.util.inspect.custom')], undefined)
+
 	{
 		const fn = () => ':)'
 		using _ = patch(Array.prototype, fn)
@@ -42,6 +48,15 @@ Deno.test(String(Symbol.dispose.description), () => {
 
 Deno.test(inspectBytes.name, async (t) => {
 	using _ = patch(Uint8Array.prototype, inspectBytes)
+
+	await t.step('empty', () => {
+		const bytes = new Uint8Array()
+
+		assertEquals(
+			Deno.inspect(bytes, { colors: false }),
+			'Uint8Array(0) []',
+		)
+	})
 
 	await t.step('hello world', () => {
 		const bytes = new TextEncoder().encode(
@@ -220,8 +235,8 @@ Deno.test(inspectBytes.name, async (t) => {
 		)
 	})
 
-	await t.step('padding', () => {
-		const iterableLimit = 0xffffff
+	await t.step('line index zero padding', () => {
+		const iterableLimit = Infinity
 
 		assertEquals(
 			Deno.inspect(new Uint8Array(0x100), { colors: false, iterableLimit }),
@@ -353,5 +368,34 @@ Deno.test(inspectBytes.name, async (t) => {
 		bytes[2] = 'C'.codePointAt(0)!
 		bytes[3] = 'D'.codePointAt(0)!
 		assertEquals(getFormattedChars(), '\x1b[32mABCD\x1b[39m')
+	})
+
+	await t.step('options.indentationLvl', () => {
+		const bytes = new TextEncoder().encode(
+			'Hello, 🌍!',
+		)
+
+		assertEquals(
+			// @ts-expect-error `indentationLvl` is a hidden option of
+			Deno.inspect(bytes, { colors: false, indentationLvl: 2 }),
+			dedent`
+				Uint8Array(12) [
+				    ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
+				    0x 48 65 6c 6c 6f 2c 20 f0 9f 8c 8d 21             Hello, ....!
+				  ]
+			`,
+		)
+
+		assertEquals(
+			Deno.inspect([bytes], { colors: false }),
+			dedent`
+				[
+				  Uint8Array(12) [
+				    ## x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xa xb xc xd xe xf
+				    0x 48 65 6c 6c 6f 2c 20 f0 9f 8c 8d 21             Hello, ....!
+				  ]
+				]
+			`,
+		)
 	})
 })

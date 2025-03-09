@@ -31,7 +31,7 @@ function getOption<K extends keyof InspectOptions>(o: Record<string, unknown>, k
 }
 
 function getAndNormalizeOptions(args: unknown[]): InspectOptions {
-	const o = (args.find((x) => typeof x === 'object') ?? {}) as Record<string, unknown>
+	const o = (args.find((x) => typeof x === 'object' && x != null) ?? {}) as Record<string, unknown>
 
 	const inspectOptions: InspectOptions = {
 		currentDepth: getOption(o, 'currentDepth'),
@@ -48,7 +48,7 @@ function getAndNormalizeOptions(args: unknown[]): InspectOptions {
  * Creates a custom inspect function, adding error handling, handling of colors, and normalization of options.
  *
  * @param fn The function to create the custom inspect function from.
- * @returns The modified custom inspect function, which can be used with both Symbol.for('Deno.customInspect') and Symbol.for('nodejs.util.inspect.custom').
+ * @returns The modified custom inspect function, which can be used with both `Symbol.for('Deno.customInspect')` and `Symbol.for('nodejs.util.inspect.custom')`.
  */
 export function createCustomInspect<T>(fn: (this: T, options: InspectOptions) => string): CustomInspect<T> {
 	const inspect = function (this: T, ...args: unknown[]) {
