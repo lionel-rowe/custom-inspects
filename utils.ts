@@ -50,28 +50,49 @@ function getAndNormalizeOptions(args: unknown[]): InspectOptions {
  * @param fn The function to create the custom inspect function from.
  * @returns The modified custom inspect function, which can be used with both `Symbol.for('Deno.customInspect')` and `Symbol.for('nodejs.util.inspect.custom')`.
  */
-export function createCustomInspect<T>(fn: (this: T, options: InspectOptions) => string): CustomInspect<T> {
+export function createCustomInspect<T>(fn: CustomInspect<T>): (this: T, ...args: unknown[]) => string {
 	const inspect = function (this: T, ...args: unknown[]) {
 		const options = getAndNormalizeOptions(args)
 		using _ = handleColor(options)
 
 		try {
 			return fn.call(this, options)
-		} catch {
-			return colors.cyan(
-				// @ts-expect-error name
-				`${this[Symbol.toStringTag] ?? this.constructor.name ?? this.name} <[ failed to inspect ]>`,
-			)
+		} catch (e) {
+			// @ts-expect-error name
+			const name = [this[Symbol.toStringTag], this.constructor?.name, this.name]
+				.find((x) => typeof x === 'string') ?? ''
+			return colors.cyan(`${name} <[ failed to inspect ]> : ${getErrorDetails(e)}`)
 		}
 	}
 	Object.defineProperty(inspect, 'name', { value: fn.name })
 	return inspect
 }
 
+function getErrorDetails(e: unknown): string {
+	try {
+		return e instanceof Error ? e.stack ?? e.message : String(e)
+	} catch {
+		try {
+			return Object.prototype.toString.call(e)
+		} catch {
+			return 'failed to get error details'
+		}
+	}
+}
+
 /**
  * The custom inspect function type.
  */
-export type CustomInspect<T> = (this: T, ...args: unknown[]) => string
+export type CustomInspect<T> = (this: T, options: InspectOptions) => string
+
+const DEFAULT_DESCRIPTOR = {
+	configurable: true,
+	enumerable: true,
+	writable: true,
+} as const
+const DENO_CUSTOM_INSPECT = Symbol.for('Deno.customInspect')
+const NODEJS_UTIL_INSPECT_CUSTOM = Symbol.for('nodejs.util.inspect.custom')
+const INSPECT_SYMBOLS = [DENO_CUSTOM_INSPECT, NODEJS_UTIL_INSPECT_CUSTOM] as const
 
 /**
  * Monkey-patches the given object/prototype with the given custom inspect function.
@@ -108,24 +129,19 @@ export function patch<T>(
 ): {
 	[Symbol.dispose](): void
 } {
-	const syms = [
-		Symbol.for('Deno.customInspect'),
-		Symbol.for('nodejs.util.inspect.custom'),
-	]
-	const oldVals: unknown[] = []
-
-	for (const sym of syms) {
-		// @ts-expect-error custom inspect
-		oldVals.push(obj[sym])
-		// @ts-expect-error custom inspect
-		obj[sym] = customInspect
-	}
+	const descriptors = Object.fromEntries(INSPECT_SYMBOLS.map((sym) => {
+		const descriptor = Object.getOwnPropertyDescriptor(obj, sym)
+		Object.defineProperty(obj, sym, { ...DEFAULT_DESCRIPTOR, value: customInspect })
+		return [sym, descriptor]
+	})) as Record<typeof INSPECT_SYMBOLS[number], PropertyDescriptor | undefined>
 
 	return {
 		[Symbol.dispose]() {
-			for (const [idx, sym] of syms.entries()) {
+			for (const sym of INSPECT_SYMBOLS) {
+				const descriptor = descriptors[sym]
 				// @ts-expect-error custom inspect
-				obj[sym] = oldVals[idx]
+				if (descriptor == null) delete obj[sym]
+				else Object.defineProperty(obj, sym, descriptor)
 			}
 		},
 	}

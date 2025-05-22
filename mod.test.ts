@@ -1,4 +1,4 @@
-import { assertEquals, assertStringIncludes } from '@std/assert'
+import { assert, assertEquals, assertStringIncludes } from '@std/assert'
 import { inspectMinimal } from './minimal.ts'
 import { inspectBytes } from './bytes.ts'
 import { patch } from './utils.ts'
@@ -397,5 +397,68 @@ Deno.test(inspectBytes.name, async (t) => {
 				]
 			`,
 		)
+	})
+})
+
+Deno.test('restoring property descriptors', async (t) => {
+	const SYMBOLS = [
+		Symbol.for('Deno.customInspect'),
+		Symbol.for('nodejs.util.inspect.custom'),
+	]
+	const INSPECT = () => ':)'
+	const DESCRIPTOR = {
+		configurable: true,
+		enumerable: true,
+		value: INSPECT,
+		writable: true,
+	}
+
+	await t.step('not defined', () => {
+		const obj = {}
+		const originalPropertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+		for (const sym of SYMBOLS) assert(!Object.hasOwn(obj, sym))
+		assertEquals(originalPropertyDescriptors, [undefined, undefined])
+
+		{
+			using _ = patch(obj, INSPECT)
+			const propertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+			for (const sym of SYMBOLS) assert(Object.hasOwn(obj, sym))
+			assertEquals(propertyDescriptors, [DESCRIPTOR, DESCRIPTOR])
+		}
+
+		const propertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+		for (const sym of SYMBOLS) assert(!Object.hasOwn(obj, sym))
+		assertEquals(propertyDescriptors, [undefined, undefined])
+	})
+
+	await t.step('defined `undefined`', () => {
+		const UNDEFINED_PROPERTY_DESCRIPTOR = {
+			configurable: true,
+			enumerable: true,
+			value: undefined,
+			writable: true,
+		}
+
+		const obj = Object.fromEntries(SYMBOLS.map((sym) => [sym, undefined]))
+		const originalPropertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+		for (const sym of SYMBOLS) assert(Object.hasOwn(obj, sym))
+		assertEquals(originalPropertyDescriptors, [UNDEFINED_PROPERTY_DESCRIPTOR, UNDEFINED_PROPERTY_DESCRIPTOR])
+
+		{
+			using _ = patch(obj, INSPECT)
+			const propertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+			for (const sym of SYMBOLS) assert(Object.hasOwn(obj, sym))
+			assertEquals(propertyDescriptors, [DESCRIPTOR, DESCRIPTOR])
+		}
+
+		const propertyDescriptors = SYMBOLS.map((sym) => Object.getOwnPropertyDescriptor(obj, sym))
+
+		for (const sym of SYMBOLS) assert(Object.hasOwn(obj, sym))
+		assertEquals(propertyDescriptors, [UNDEFINED_PROPERTY_DESCRIPTOR, UNDEFINED_PROPERTY_DESCRIPTOR])
 	})
 })
